@@ -9,7 +9,6 @@ import "@pwn_deployer/PWNDeployer.sol";
 /*
 
 forge script script/PWNDeployer.s.sol:Deploy \
---sig "deployDeployer(address)" $ADMIN \
 --rpc-url $RPC_URL \
 --private-key $PRIVATE_KEY \
 --verify --etherscan-api-key $ETHERSCAN_API_KEY \
@@ -18,11 +17,11 @@ forge script script/PWNDeployer.s.sol:Deploy \
 */
 contract Deploy is Script {
 
-    function deployDeployer(address admin) external {
+    function run() external {
         vm.startBroadcast();
 
+        // Deploy via `0x0cfC62...C8D6de` EOA to have the same address on all networks
         PWNDeployer deployer = new PWNDeployer();
-        deployer.transferOwnership(admin);
         console2.log("Deployer address:", address(deployer));
 
         vm.stopBroadcast();
