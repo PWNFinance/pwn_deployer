@@ -1,6 +1,21 @@
 [profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
+solc_version = '0.8.16'
 
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+
+[rpc_endpoints]
+# Mainnets
+ethereum = "${ETHEREUM_URL}"
+polygon = "${POLYGON_URL}"
+arbitrum = "${ARBITRUM_URL}"
+optimism = "${OPTIMISM_URL}"
+gnosis = "${GNOSIS_URL}"
+
+# Testnets
+goerli = "${GOERLI_URL}"
+mumbai = "${MUMBAI_URL}"
+arbitrum_goerli = "${ARBITRUM_GOERLI_URL}"
+optimism_goerli = "${OPTIMISM_GOERLI_URL}"
+chiado = "${CHIADO_URL}"
+
+# Devnets
+local = "${LOCAL_URL}"

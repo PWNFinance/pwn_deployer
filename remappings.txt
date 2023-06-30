@@ -1,0 +1,5 @@
+@openzeppelin/=lib/openzeppelin-contracts/contracts/
+@pwn_deployer/=src/
+@pwn_deployer_test/=test/
+
+forge-std/=lib/forge-std/src/
