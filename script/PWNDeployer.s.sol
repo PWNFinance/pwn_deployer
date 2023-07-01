@@ -30,13 +30,11 @@ interface GnosisSafeProxyLike {
 contract Deploy is Script {
 
 /*
-
 forge script script/PWNDeployer.s.sol:Deploy \
 --rpc-url $RPC_URL \
 --private-key $PRIVATE_KEY \
 --verify --etherscan-api-key $ETHERSCAN_API_KEY \
 --broadcast
-
 */
     function run() external {
         vm.startBroadcast();
@@ -50,14 +48,12 @@ forge script script/PWNDeployer.s.sol:Deploy \
 
 
 /*
-
 forge script script/PWNDeployer.s.sol:Deploy \
 --sig "deploySafe(address,address,address,uint256)" $SAFE_PROXY_FACTORY $SAFE_SINGLETON $FALLBACK_HANDLER $SALT \
 --rpc-url $RPC_URL \
 --private-key $PRIVATE_KEY \
 --verify --etherscan-api-key $ETHERSCAN_API_KEY \
 --broadcast
-
 */
     function deploySafe(address safeProxFactory, address safeSingleton, address fallbackHandler, uint256 salt) external {
         vm.startBroadcast();
