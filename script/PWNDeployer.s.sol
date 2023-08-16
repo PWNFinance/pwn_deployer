@@ -59,6 +59,7 @@ forge script script/PWNDeployer.s.sol:Deploy \
         vm.startBroadcast();
 
         address[] memory owners = new address[](1);
+        // use the same first owner address on all networks
         owners[0] = 0x0cfC62C2E82dA2f580Fd54a2f526F65B6cC8D6de;
 
         address safe = GnosisSafeProxyFactoryLike(safeProxFactory).createProxyWithNonce({
@@ -70,6 +71,23 @@ forge script script/PWNDeployer.s.sol:Deploy \
             saltNonce: salt
         });
         console2.log("Safe address:", safe);
+
+        vm.stopBroadcast();
+    }
+
+
+/*
+forge script script/PWNDeployer.s.sol:Deploy \
+--sig "transferDeployerOwnership(address,address)" $DEPLOYER $NEW_OWNER \
+--rpc-url $RPC_URL \
+--private-key $PRIVATE_KEY \
+--broadcast
+*/
+    function transferDeployerOwnership(address deployer, address newOwner) external {
+        vm.startBroadcast();
+
+        PWNDeployer(deployer).transferOwnership(newOwner);
+        console2.log("New deployer owner:", newOwner);
 
         vm.stopBroadcast();
     }
