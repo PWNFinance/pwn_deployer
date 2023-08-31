@@ -14,7 +14,7 @@ interface GnosisSafeProxyFactoryLike {
     ) external returns (address proxy);
 }
 
-interface GnosisSafeProxyLike {
+interface GnosisSafeLike {
     function setup(
         address[] calldata _owners,
         uint256 _threshold,
@@ -25,9 +25,46 @@ interface GnosisSafeProxyLike {
         uint256 payment,
         address payable paymentReceiver
     ) external;
+    function addOwnerWithThreshold(address owner, uint256 _threshold) external;
+    function swapOwner(address prevOwner, address oldOwner, address newOwner) external;
+    function changeThreshold(uint256 _threshold) external;
+    function isOwner(address owner) external view returns (bool);
+    function execTransaction(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        uint8 operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address payable refundReceiver,
+        bytes memory signatures
+    ) external payable returns (bool success);
+}
+
+library GnosisSafeUtils {
+
+    function _gnosisSafeTx(GnosisSafeLike safe, address to, bytes memory data) internal returns (bool) {
+        uint256 ownerValue = uint256(uint160(msg.sender));
+        return GnosisSafeLike(safe).execTransaction({
+            to: to,
+            value: 0,
+            data: data,
+            operation: 0,
+            safeTxGas: 0,
+            baseGas: 0,
+            gasPrice: 0,
+            gasToken: address(0),
+            refundReceiver: payable(0),
+            signatures: abi.encodePacked(ownerValue, bytes32(0), uint8(1))
+        });
+    }
+
 }
 
 contract Deploy is Script {
+    using GnosisSafeUtils for GnosisSafeLike;
 
 /*
 forge script script/PWNDeployer.s.sol:Deploy \
@@ -65,12 +102,65 @@ forge script script/PWNDeployer.s.sol:Deploy \
         address safe = GnosisSafeProxyFactoryLike(safeProxFactory).createProxyWithNonce({
             _singleton: safeSingleton,
             initializer: abi.encodeWithSelector(
-                GnosisSafeProxyLike.setup.selector,
+                GnosisSafeLike.setup.selector,
                 owners, 1, address(0), "", fallbackHandler, address(0), 0, payable(address(0))
             ),
             saltNonce: salt
         });
         console2.log("Safe address:", safe);
+
+        vm.stopBroadcast();
+    }
+
+/*
+forge script script/PWNDeployer.s.sol:Deploy --sig "setupNewSafe()" \
+--rpc-url $RPC_URL --private-key $PRIVATE_KEY \
+--with-gas-price $(cast --to-wei 15 gwei) \
+--broadcast
+*/
+    function setupNewSafe() external {
+        vm.startBroadcast();
+
+        // --- CONFIG START --------------------------------------------
+        GnosisSafeLike safe = GnosisSafeLike(0x0);
+        address[] memory newOwners = new address[](0);
+        address swapOwner = 0x0; // naim
+        uint256 newThreshold = 1;
+        // --- CONFIG END ----------------------------------------------
+
+
+        bool success;
+        // Add new owners
+        for (uint256 i; i < newOwners.length; ++i) {
+            success = safe._gnosisSafeTx({
+                to: address(safe),
+                data: abi.encodeWithSelector(
+                    GnosisSafeLike.addOwnerWithThreshold.selector, newOwners[i], 1
+                )
+            });
+            require(success && GnosisSafeLike(safe).isOwner(newOwners[i]), "Add owner tx failed");
+            console2.log("Added new owner:", newOwners[i]);
+        }
+
+        // Swap original owner
+        success = safe._gnosisSafeTx({
+            to: address(safe),
+            data: abi.encodeWithSelector(
+                GnosisSafeLike.swapOwner.selector, newOwners[0], msg.sender, swapOwner
+            )
+        });
+        require(success && GnosisSafeLike(safe).isOwner(swapOwner), "Swap owner tx failed");
+        console2.log("Swapped owner:", msg.sender, "with", swapOwner);
+
+        // Set new threshold
+        if (newThreshold > 1) {
+            safe.changeThreshold(newThreshold);
+            console2.log("New threshold:", newThreshold);
+        } else {
+            console2.log("Threshold unchanged");
+        }
+
+        console2.log("Safe setup complete");
 
         vm.stopBroadcast();
     }
