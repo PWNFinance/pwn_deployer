@@ -122,12 +122,13 @@ forge script script/PWNDeployer.s.sol:Deploy --sig "setupNewSafe()" \
         vm.startBroadcast();
 
         // --- CONFIG START --------------------------------------------
-        GnosisSafeLike safe = GnosisSafeLike(0x0);
+        GnosisSafeLike safe = GnosisSafeLike(address(0));
         address[] memory newOwners = new address[](0);
-        address swapOwner = 0x0; // naim
+        address swapOwner = address(0);
         uint256 newThreshold = 1;
         // --- CONFIG END ----------------------------------------------
 
+        console2.log("Setup safe:", address(safe));
 
         bool success;
         // Add new owners
