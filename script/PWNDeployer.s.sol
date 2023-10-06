@@ -45,7 +45,7 @@ interface GnosisSafeLike {
 
 library GnosisSafeUtils {
 
-    function _gnosisSafeTx(GnosisSafeLike safe, address to, bytes memory data) internal returns (bool) {
+    function execTransaction(GnosisSafeLike safe, address to, bytes memory data) internal returns (bool) {
         uint256 ownerValue = uint256(uint160(msg.sender));
         return GnosisSafeLike(safe).execTransaction({
             to: to,
@@ -66,10 +66,13 @@ library GnosisSafeUtils {
 contract Deploy is Script {
     using GnosisSafeUtils for GnosisSafeLike;
 
+    address internal constant SENTINEL_OWNERS = address(0x1);
+
 /*
 forge script script/PWNDeployer.s.sol:Deploy \
 --rpc-url $RPC_URL \
 --private-key $PRIVATE_KEY \
+--with-gas-price $(cast --to-wei 15 gwei) \
 --verify --etherscan-api-key $ETHERSCAN_API_KEY \
 --broadcast
 */
@@ -86,10 +89,10 @@ forge script script/PWNDeployer.s.sol:Deploy \
 
 /*
 forge script script/PWNDeployer.s.sol:Deploy \
---sig "deploySafe(address,address,address,uint256)" $SAFE_PROXY_FACTORY $SAFE_SINGLETON $FALLBACK_HANDLER $SALT \
+--sig "deploySafe(address,address,address,uint256)" $SAFE_PROXY_FACTORY $SAFE_SINGLETON $FALLBACK_HANDLER $DEPLOYER_SAFE_SALT \
 --rpc-url $RPC_URL \
 --private-key $PRIVATE_KEY \
---verify --etherscan-api-key $ETHERSCAN_API_KEY \
+--with-gas-price $(cast --to-wei 15 gwei) \
 --broadcast
 */
     function deploySafe(address safeProxFactory, address safeSingleton, address fallbackHandler, uint256 salt) external {
@@ -133,7 +136,7 @@ forge script script/PWNDeployer.s.sol:Deploy --sig "setupNewSafe()" \
         bool success;
         // Add new owners
         for (uint256 i; i < newOwners.length; ++i) {
-            success = safe._gnosisSafeTx({
+            success = safe.execTransaction({
                 to: address(safe),
                 data: abi.encodeWithSelector(
                     GnosisSafeLike.addOwnerWithThreshold.selector, newOwners[i], 1
@@ -144,10 +147,11 @@ forge script script/PWNDeployer.s.sol:Deploy --sig "setupNewSafe()" \
         }
 
         // Swap original owner
-        success = safe._gnosisSafeTx({
+        address prevOwner = newOwners.length > 0 ? newOwners[0] : SENTINEL_OWNERS;
+        success = safe.execTransaction({
             to: address(safe),
             data: abi.encodeWithSelector(
-                GnosisSafeLike.swapOwner.selector, newOwners[0], msg.sender, swapOwner
+                GnosisSafeLike.swapOwner.selector, prevOwner, msg.sender, swapOwner
             )
         });
         require(success && GnosisSafeLike(safe).isOwner(swapOwner), "Swap owner tx failed");
@@ -172,6 +176,7 @@ forge script script/PWNDeployer.s.sol:Deploy \
 --sig "transferDeployerOwnership(address,address)" $DEPLOYER $NEW_OWNER \
 --rpc-url $RPC_URL \
 --private-key $PRIVATE_KEY \
+--with-gas-price $(cast --to-wei 15 gwei) \
 --broadcast
 */
     function transferDeployerOwnership(address deployer, address newOwner) external {
