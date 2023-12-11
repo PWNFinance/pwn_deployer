@@ -128,7 +128,6 @@ forge script script/PWNDeployer.s.sol:Deploy --sig "setupNewSafe()" \
         GnosisSafeLike safe = GnosisSafeLike(address(0));
         address[] memory newOwners = new address[](0);
         address swapOwner = address(0);
-        uint256 newThreshold = 1;
         // --- CONFIG END ----------------------------------------------
 
         console2.log("Setup safe:", address(safe));
@@ -156,14 +155,6 @@ forge script script/PWNDeployer.s.sol:Deploy --sig "setupNewSafe()" \
         });
         require(success && GnosisSafeLike(safe).isOwner(swapOwner), "Swap owner tx failed");
         console2.log("Swapped owner:", msg.sender, "with", swapOwner);
-
-        // Set new threshold
-        if (newThreshold > 1) {
-            safe.changeThreshold(newThreshold);
-            console2.log("New threshold:", newThreshold);
-        } else {
-            console2.log("Threshold unchanged");
-        }
 
         console2.log("Safe setup complete");
 
