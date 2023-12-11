@@ -9,6 +9,7 @@ polygon = "${POLYGON_URL}"
 arbitrum = "${ARBITRUM_URL}"
 optimism = "${OPTIMISM_URL}"
 gnosis = "${GNOSIS_URL}"
+bsc = "${BSC_URL}"
 
 # Testnets
 goerli = "${GOERLI_URL}"
